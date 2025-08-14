@@ -3,6 +3,9 @@
 .map-container {
   height: 460px !important;
 }
+.rounded-2xl {
+  border: solid;
+}
 
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;

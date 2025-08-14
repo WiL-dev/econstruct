@@ -90,7 +90,7 @@ export default function UploadAndPickLeaflet() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen p-6">
       <div className="mx-auto max-w-4xl space-y-6">
         <header className="space-y-2">
           <h1 className="text-2xl font-semibold">ECOnstruct</h1>
@@ -98,7 +98,7 @@ export default function UploadAndPickLeaflet() {
         </header>
 
         {/* Location Picker */}
-        <section className="rounded-2xl border bg-white p-4 shadow-sm space-y-3">
+        <section className="rounded-2xl border p-4 shadow-sm space-y-3">
           <label className="block text-sm font-medium">Project location</label>
           <p className="text-xs text-gray-500">Tip: Click the map to set the marker. Light demo geocoding via Nominatim.</p>
           <div className="flex gap-2">
