@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 .map-container {
   height: 460px !important;
 }

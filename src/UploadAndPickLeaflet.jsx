@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import 'leaflet/dist/leaflet.css';
@@ -35,7 +36,7 @@ export default function UploadAndPickLeaflet() {
   const [fileError, setFileError] = useState("");
 
   const [marker, setMarker] = useState(null);
-  const [center, setCenter] = useState({ lat: -36.8485, lng: 174.7633 }); // Auckland
+  const [center, setCenter] = useState({ lat: -37.78737, lng: 175.28221 }); // Auckland
   const [search, setSearch] = useState("");
   const [searchError, setSearchError] = useState("");
 
@@ -92,34 +93,14 @@ export default function UploadAndPickLeaflet() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="mx-auto max-w-4xl space-y-6">
         <header className="space-y-2">
-          <h1 className="text-2xl font-semibold">Upload & Pick Location (No API key)</h1>
-          <p className="text-gray-600">OpenStreetMap tiles via Leaflet. Click map to drop a marker.</p>
+          <h1 className="text-2xl font-semibold">ECOnstruct</h1>
+          <p className="text-gray-600">Greener Spaces for all</p>
         </header>
-
-        {/* File Upload */}
-        <section className="rounded-2xl border bg-white p-4 shadow-sm">
-          <label className="block text-sm font-medium mb-2">Data file (must end in 001–100)</label>
-          <input
-            type="file"
-            onChange={onFileChange}
-            className="block w-full rounded-xl border px-3 py-2"
-            accept=".csv,.xlsx,.xls,.json,.txt,.pdf"
-          />
-          {fileName && (
-            <div className="mt-2 text-sm">
-              <span className="font-medium">Selected:</span> {fileName}
-            </div>
-          )}
-          {fileError ? (
-            <div className="mt-2 text-sm text-red-600">{fileError}</div>
-          ) : fileNumber !== null ? (
-            <div className="mt-2 text-sm text-green-700">Detected number: {String(fileNumber).padStart(3, "0")}</div>
-          ) : null}
-        </section>
 
         {/* Location Picker */}
         <section className="rounded-2xl border bg-white p-4 shadow-sm space-y-3">
           <label className="block text-sm font-medium">Project location</label>
+          <p className="text-xs text-gray-500">Tip: Click the map to set the marker. Light demo geocoding via Nominatim.</p>
           <div className="flex gap-2">
             <input
               type="text"
@@ -135,7 +116,7 @@ export default function UploadAndPickLeaflet() {
           {searchError && <div className="text-sm text-red-600">{searchError}</div>}
 
           <div className="map-container h-[420px] w-full overflow-hidden rounded-2xl">
-            <MapContainer center={center} zoom={12} style={{ height: "100%", width: "100%" }}>
+            <MapContainer center={center} zoom={17} style={{ height: "100%", width: "100%" }}>
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -144,7 +125,27 @@ export default function UploadAndPickLeaflet() {
               {marker && <Marker position={marker} />}
             </MapContainer>
           </div>
-          <p className="text-xs text-gray-500">Tip: Click the map to set the marker. Light demo geocoding via Nominatim.</p>
+        </section>
+
+        {/* File Upload */}
+        <section className="rounded-2xl border bg-white p-4 shadow-sm">
+          <label className="block text-sm font-medium mb-2">BIM file of the building</label>
+          <input
+            type="file"
+            onChange={onFileChange}
+            className="block w-full rounded-xl border px-3 py-2"
+            accept=".csv,.ifc"
+          />
+          {fileName && (
+            <div className="mt-2 text-sm">
+              <span className="font-medium">Selected:</span> {fileName}
+            </div>
+          )}
+          {fileError ? (
+            <div className="mt-2 text-sm text-red-600">{fileError}</div>
+          ) : fileNumber !== null ? (
+            <div className="mt-2 text-sm text-green-700">Detected number: {String(fileNumber).padStart(3, "0")}</div>
+          ) : null}
         </section>
 
         <div className="flex items-center justify-between">
