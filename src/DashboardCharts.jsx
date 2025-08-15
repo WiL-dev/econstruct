@@ -44,8 +44,8 @@ function buildSeries(homeKWh, solarKWh, gridKWh) {
     const t = i + 1;
     out.push({
       t: `W${t}`,
-      solar: Math.max(0, solarKWh + Math.round(Math.sin((t / 3) * Math.PI) * (solarKWh / 2))),
-      home: Math.max(0, homeKWh + Math.round(Math.cos((t / 4) * Math.PI) * (homeKWh / 2))),
+      temperature: Math.max(0, solarKWh + Math.round(Math.sin((t / 3) * Math.PI) * (solarKWh / 2))),
+      humidity: Math.max(0, homeKWh + Math.round(Math.cos((t / 4) * Math.PI) * (homeKWh / 2))),
       grid: Math.max(0, gridKWh + Math.round(Math.sin((t / 5) * Math.PI) * (gridKWh / 2))),
     });
   }
@@ -68,17 +68,16 @@ function allocHomeSources(homeKWh, fromSolar, fromBattery) {
 }
 
 export default function DashboardCharts() {
-  // const { code } = useParams();
-  // const { state } = useLocation();
-  const code = "333";
-  //const { state } = useLocation();
-  const state = {
-    filename: 'something333.ifc',
-    location: {
-        lat: -36.80837,
-        lng: 174.72353
-    }
-  }
+  const { code } = useParams();
+  const { state } = useLocation();
+  // const code = "333";
+  // const state = {
+  //   filename: 'something333.ifc',
+  //   location: {
+  //       lat: -36.80837,
+  //       lng: 174.72353
+  //   }
+  // }
   const { code: normalized, homeKWh, solarKWh, gridKWh } = useDigitsToKwh(code);
 
   const { toBattery, toHome, toGrid } = allocSolarFlows(solarKWh);
@@ -92,7 +91,7 @@ export default function DashboardCharts() {
   const daySeries = Array.from({ length: 10 }, (_, i) => ({
     t: `${i}:00`,
     toHome: Math.max(0, Math.round((toHome / 5) * Math.sin((i / 3) * Math.PI) + toHome / 2)),
-    toGrid: Math.max(0, Math.round((toGrid / 5) * Math.cos((i / 3) * Math.PI) + toGrid / 2)),
+    orientation: Math.max(0, Math.round((toGrid / 5) * Math.cos((i / 3) * Math.PI) + toGrid / 2)),
   }));
 
   const solarPie = [
@@ -113,22 +112,75 @@ export default function DashboardCharts() {
   const gaugeVal = Math.min(100, toBattery * 10); // toy SOC gauge: 0–100
 
   return (
-    <div className="min-h-screen" style={{ background: COLORS.bg, color: "#e5e7eb" }}>
+    <div className="min-h-screen">
       <div className="mx-auto max-w-7xl p-6 space-y-6">
         <header className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold">AI energy management and monitoring dashboard</h1>
+            <h1 className="text-2xl font-semibold">Energy management and projection</h1>
             <p className="text-slate-300 text-sm">
               Code: {normalized}
               {state?.fileName ? ` · ${state.fileName}` : ""}
               {state?.location ? ` · ${state.location.lat.toFixed(4)}, ${state.location.lng.toFixed(4)}` : ""}
             </p>
           </div>
-          {/* <Link to="/" className="rounded-xl bg-white/10 px-4 py-2 text-sm hover:bg-white/20">← Back</Link> */}
+          <Link to="/" className="rounded-xl bg-white/10 px-4 py-2 text-sm hover:bg-white/20">← Back</Link>
         </header>
 
         {/* Top grid */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Solar value & revenue */}
+          <Card title="Weather & Climate" subtitle="Toy series">
+            <ResponsiveContainer width="100%" height={224}>
+                <LineChart data={series}>
+                  <XAxis dataKey="t" hide />
+                  <YAxis hide />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="temperature" stroke={COLORS.home} strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="humidity" stroke={COLORS.grid} strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+          </Card>
+
+          {/* Day/Week flows */}
+          <Card title="Shading">
+            <ResponsiveContainer width="100%" height={192}>
+                <AreaChart data={daySeries}>
+                  <XAxis dataKey="t" hide />
+                  <YAxis hide />
+                  <Tooltip />
+                  <Area dataKey="toHome" type="monotone" fill={COLORS.home} stroke={COLORS.home} fillOpacity={0.3} />
+                  <Area dataKey="orientation" type="monotone" fill={COLORS.grid} stroke={COLORS.grid} fillOpacity={0.3} />
+                </AreaChart>
+              </ResponsiveContainer>
+          </Card>
+
+          {/* Environmental benefits */}
+          <Card title="Environmental benefits" subtitle={`Accumulated power generation (kWh): ${solarKWh}`}>
+            <div className="grid grid-cols-3 gap-3">
+              <Benefit label="Standard coal saved (t)" value={(solarKWh * 0.0003).toFixed(2)} />
+              <Benefit label="CO₂ avoided (t)" value={(avoidedKg / 1000).toFixed(2)} />
+              <Benefit label="Equivalent trees" value={Math.round(avoidedKg / 21)} />
+            </div>
+          </Card>
+        </section>
+
+        {/* Middle grid */}
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Grid net exported */}
+          <Card title="Grid – Net Exported (kWh)">
+            <ResponsiveContainer width="100%" height={192}>
+                <BarChart data={gridBar}>
+                  <XAxis dataKey="name" hide />
+                  <YAxis hide />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="toGrid" stackId="a" fill={COLORS.home} />
+                  <Bar dataKey="fromGrid" stackId="a" fill={COLORS.grid} />
+                </BarChart>
+              </ResponsiveContainer>
+            <div className="text-right text-sm text-slate-300 pr-1">Net exported: {Math.max(toGrid - gridKWh, 0)}</div>
+          </Card>
+
           {/* Solar donut */}
           <Card title="Solar (kWh)" subtitle={`${solarKWh} generated`}>
             <ResponsiveContainer width="100%" height={224}>
@@ -148,110 +200,11 @@ export default function DashboardCharts() {
             ]} />
           </Card>
 
-          {/* Battery gauge */}
-          <Card title="Powermest" subtitle="State of charge">
-            <ResponsiveContainer width="100%" height={224}>
-                <RadialBarChart innerRadius="60%" outerRadius="100%" data={[{ name: "SOC", value: gaugeVal }]}
-                  startAngle={180} endAngle={0}>
-                  <RadialBar minAngle={15} clockWise dataKey="value" fill={COLORS.accent} cornerRadius={8} />
-                  <Tooltip formatter={(v) => `${Math.round(v)}%`} />
-                </RadialBarChart>
-              </ResponsiveContainer>
-            <div className="text-center text-2xl font-semibold">{Math.round(gaugeVal)}%</div>
-          </Card>
-
-          {/* Home donut */}
-          <Card title="Home usage (kWh)" subtitle={`${homeKWh} total`}>
-            <ResponsiveContainer width="100%" height={224}>
-                <PieChart>
-                  <Pie data={homePie} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={2}>
-                    {homePie.map((_, i) => (
-                      <Cell key={i} fill={[COLORS.home, COLORS.accent, COLORS.grid][i]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(v) => `${v} kWh`} />
-                </PieChart>
-              </ResponsiveContainer>
-            <LegendInline items={[
-              { label: "From Solar", color: COLORS.home, val: fromSolar },
-              { label: "From Battery", color: COLORS.accent, val: fromBattery },
-              { label: "From Grid", color: COLORS.grid, val: fromGrid },
-            ]} />
-          </Card>
-        </section>
-
-        {/* Middle grid */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Solar value & revenue */}
-          <Card title="Solar value & revenue" subtitle="Toy series">
-            <ResponsiveContainer width="100%" height={224}>
-                <LineChart data={series}>
-                  <XAxis dataKey="t" hide />
-                  <YAxis hide />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="solar" stroke={COLORS.home} strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="home" stroke={COLORS.grid} strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-          </Card>
-
-          {/* Active alarms */}
-          <Card title="Active alarms" subtitle="demo">
-            <ResponsiveContainer width="100%" height={224}>
-                <PieChart>
-                  <Pie data={[{ name: "Total", value: 1 }]} dataKey="value" innerRadius={60} outerRadius={80}>
-                    <Cell fill="#334155" />
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-            <div className="text-center text-3xl font-semibold">0</div>
-          </Card>
-
           {/* Work orders */}
           <Card title="Work orders">
             <div className="grid grid-cols-2 gap-3 text-center">
               <KPI label="Executing" value={(solarKWh % 5) + 1} />
               <KPI label="Finished" value={(homeKWh % 5) + 1} />
-            </div>
-          </Card>
-        </section>
-
-        {/* Bottom grid */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Day/Week flows */}
-          <Card title="Solar flows – day view">
-            <ResponsiveContainer width="100%" height={192}>
-                <AreaChart data={daySeries}>
-                  <XAxis dataKey="t" hide />
-                  <YAxis hide />
-                  <Tooltip />
-                  <Area dataKey="toHome" type="monotone" fill={COLORS.home} stroke={COLORS.home} fillOpacity={0.3} />
-                  <Area dataKey="toGrid" type="monotone" fill={COLORS.grid} stroke={COLORS.grid} fillOpacity={0.3} />
-                </AreaChart>
-              </ResponsiveContainer>
-          </Card>
-
-          {/* Grid net exported */}
-          <Card title="Grid – Net Exported (kWh)">
-            <ResponsiveContainer width="100%" height={192}>
-                <BarChart data={gridBar}>
-                  <XAxis dataKey="name" hide />
-                  <YAxis hide />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="toGrid" stackId="a" fill={COLORS.home} />
-                  <Bar dataKey="fromGrid" stackId="a" fill={COLORS.grid} />
-                </BarChart>
-              </ResponsiveContainer>
-            <div className="text-right text-sm text-slate-300 pr-1">Net exported: {Math.max(toGrid - gridKWh, 0)}</div>
-          </Card>
-
-          {/* Environmental benefits */}
-          <Card title="Environmental benefits" subtitle={`Accumulated power generation (kWh): ${solarKWh}`}>
-            <div className="grid grid-cols-3 gap-3">
-              <Benefit label="Standard coal saved (t)" value={(solarKWh * 0.0003).toFixed(2)} />
-              <Benefit label="CO₂ avoided (t)" value={(avoidedKg / 1000).toFixed(2)} />
-              <Benefit label="Equivalent trees" value={Math.round(avoidedKg / 21)} />
             </div>
           </Card>
         </section>

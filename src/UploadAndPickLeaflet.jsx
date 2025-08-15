@@ -31,6 +31,8 @@ function ClickHandler({ onPick }) {
 
 export default function UploadAndPickLeaflet() {
   const navigate = useNavigate();
+  const [bannerSrc, setBannerSrc] = useState(null);     // NEW
+  const banners = ["./src/assets/01.png", "./src/assets/02.png"];
   const [fileName, setFileName] = useState("");
   const [fileNumber, setFileNumber] = useState(null);
   const [fileError, setFileError] = useState("");
@@ -56,6 +58,7 @@ export default function UploadAndPickLeaflet() {
     const { num, error } = extractTrailingNumber(f.name);
     setFileNumber(num);
     setFileError(error);
+    setBannerSrc(banners[(Math.random() * banners.length) | 0]);
   };
 
   const doSearch = async () => {
@@ -84,14 +87,15 @@ export default function UploadAndPickLeaflet() {
     if (!canContinue || !marker) return;
     const code = String(fileNumber).padStart(3, "0");
     console.log({ fileName, fileNumber, location: marker });
-    navigate(`/dashboard/${code}`, {
+    //navigate(`/dashboard/${code}`, {
+    navigate(`/dashboard/356`, {
       state: { fileName, location: marker },
     });
   };
 
   return (
     <div className="min-h-screen p-6">
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="mx-auto max-w-4xl space-y-6 float-left">
         <header className="space-y-2">
           <h1 className="text-2xl font-semibold">ECOnstruct</h1>
           <p className="text-gray-600">Greener Spaces for all</p>
@@ -133,7 +137,7 @@ export default function UploadAndPickLeaflet() {
           <input
             type="file"
             onChange={onFileChange}
-            className="block w-full rounded-xl border px-3 py-2"
+            className="cursor-pointer block w-full rounded-xl border px-3 py-2"
             accept=".csv,.ifc"
           />
           {fileName && (
@@ -167,6 +171,17 @@ export default function UploadAndPickLeaflet() {
             Continue
           </button>
         </div>
+      </div>
+
+      <div className="loaded-bim mx-auto max-w-4xl space-y-6 float-right">
+         {
+         bannerSrc && (
+            <img
+              src={bannerSrc}
+              alt="random banner"
+              style={{ width: "100%", borderRadius: 12, marginTop: 12 }}
+            />
+          )}
       </div>
     </div>
   );
